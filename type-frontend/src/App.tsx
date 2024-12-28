@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { franc } from 'franc-min'; // Import the franc function from the franc-min package
 import langs from 'langs'; // Import the langs package to map codes to full language names
-import axios from 'axios'; // Import Axios for API calls
 
 // Helper function to detect the language of the text
 function detectLanguage(text: string): string {
@@ -16,32 +15,31 @@ function detectLanguage(text: string): string {
 
 // Helper function to translate the text to English using LibreTranslate API
 async function translateToEnglish(text: string, sourceLang: string): Promise<string> {
-  try {
-      const response = await fetch("https://libretranslate.com/translate", {
-          method: "POST",
-          body: JSON.stringify({
-              q: text,
-              source: sourceLang,
-              target: "en", // Always translate to English
-          }),
-          headers: {
-              "Content-Type": "application/json", // Set the content type to JSON
-          },
-      });
+    try {
+        const response = await fetch("http://127.0.0.1:5000/translate", {
+            method: "POST",
+            body: JSON.stringify({
+                text: text,
+                sourceLang: sourceLang,
+            }),
+            headers: {
+                "Content-Type": "application/json", // Set the content type to JSON
+            },
+        });
 
-      // Handle the response
-      if (!response.ok) {
-          throw new Error('Translation failed');
-      }
+        // Handle the response
+        if (!response.ok) {
+            throw new Error('Translation failed');
+        }
 
-      const data = await response.json(); // Parse the JSON response
-      return data.translatedText; // Return the translated text
-  } catch (error) {
-      console.error('Error during translation:', error);
-      return 'Translation failed'; // Return a failure message if there is an error
-  }
+        const data = await response.json(); // Parse the JSON response
+
+        return data.translated_text; // Return the translated text
+    } catch (error) {
+        console.error('Error during translation:', error);
+        return 'Translation failed'; // Return a failure message if there is an error
+    }
 }
-
 
 const App: React.FC = () => {
     const [text, setText] = useState<string>('Bonjour tout le monde'); // Sample text
@@ -58,8 +56,13 @@ const App: React.FC = () => {
 
         const langCode = franc(text); // Get the ISO language code
         if (langCode !== 'und') {
-            const translated = await translateToEnglish(text, langCode); // Translate text to English
-            setTranslatedText(translated); // Set the translated text
+            const languageObj = langs.where('3', langCode); // Map ISO 639-3 code to language object
+            if (languageObj) {
+                const translated = await translateToEnglish(text, languageObj.name); // Use language name
+                setTranslatedText(translated); // Set the translated text
+            } else {
+                setTranslatedText('Could not map language code to a valid language name');
+            }
         } else {
             setTranslatedText('Could not translate, language detection failed');
         }

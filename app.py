@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from googletrans import Translator
+from flask_cors import CORS
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)
 
 # Initialize the Google Translator
 translator = Translator()
